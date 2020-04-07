@@ -1,4 +1,5 @@
 import matplotlib
+import matplotlib.cm
 import numpy as np
 import torch
 import torch.nn.functional as F

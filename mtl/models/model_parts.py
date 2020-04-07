@@ -1,11 +1,6 @@
 import torch
 import torch.nn.functional as F
-import torchvision
 import torchvision.models.resnet as resnet
-from packaging import version
-
-assert version.parse(torch.__version__) >= version.parse('1.2')
-# assert version.parse(torchvision.__version__) >= version.parse('0.4.0')
 
 
 class BasicBlockWithDilation(torch.nn.Module):

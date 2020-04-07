@@ -34,7 +34,7 @@ class DaemonNgrok(Thread):
             cwd=os.path.join(os.path.dirname(__file__), '..', '..')
         )
 
-    def create_tensorboard_process(self):
+    def create_ngrok_process(self):
         pid = subprocess.Popen(
             ["./ngrok", "http", str(self.port)],
             stdout=subprocess.DEVNULL,
@@ -46,7 +46,7 @@ class DaemonNgrok(Thread):
         return pid
 
     def run(self):
-        pid = self.create_tensorboard_process()
+        pid = self.create_ngrok_process()
         print(f'Running ngrok daemon forwarding from port {self.port}')
 
         while not self.event.is_set():

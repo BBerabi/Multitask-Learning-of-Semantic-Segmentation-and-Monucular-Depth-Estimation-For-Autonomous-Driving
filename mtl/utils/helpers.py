@@ -1,5 +1,5 @@
 from torch.optim import SGD, Adam
-from torch.optim.lr_scheduler import _LRScheduler
+from torch.optim.lr_scheduler import LambdaLR
 
 from mtl.datasets.dataset_miniscapes import DatasetMiniscapes
 from mtl.models.model_deeplab_v3_plus import ModelDeepLabV3Plus
@@ -37,17 +37,9 @@ def resolve_optimizer(cfg, params):
 
 def resolve_lr_scheduler(cfg, optimizer):
     if cfg.lr_scheduler == 'poly':
-        return PolyLR(optimizer, cfg.lr_scheduler_power, cfg.num_epochs)
+        return LambdaLR(
+            optimizer,
+            lambda ep: max(1e-6, (1 - ep / (cfg.num_epochs-1)) ** cfg.lr_scheduler_power)
+        )
     else:
         raise NotImplementedError
-
-
-class PolyLR(_LRScheduler):
-    def __init__(self, optimizer, power, num_steps, last_epoch=-1):
-        self.power = power
-        self.num_steps = num_steps
-        super(PolyLR, self).__init__(optimizer, last_epoch)
-
-    def get_lr(self):
-        return [base_lr * (1.0 - min(self.last_epoch, self.num_steps-1) / self.num_steps) ** self.power
-                for base_lr in self.base_lrs]

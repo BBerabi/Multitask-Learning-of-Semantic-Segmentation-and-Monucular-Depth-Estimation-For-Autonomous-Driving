@@ -195,7 +195,7 @@ class ExperimentSemsegDepth(pl.LightningModule):
             'loss_val/semseg': loss_val_semseg,
             'loss_val/depth': loss_val_depth,
             'loss_val/total': loss_val_total,
-            'LR': self.trainer.lr_schedulers[0].get_lr()[0],
+            'LR': self.trainer.lr_schedulers[0].get_last_lr()[0],
         }
         tensorboard_logs.update({f'metrics_task_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
         tensorboard_logs.update({f'metrics_task_depth/{k}': v for k, v in metrics_depth.items()})
