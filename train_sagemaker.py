@@ -18,8 +18,8 @@ class Unbuffered(object):
 
 
 import sys
-# sys.stdout = Unbuffered(sys.stdout)
-# sys.stderr = Unbuffered(sys.stderr)
+sys.stdout = Unbuffered(sys.stdout)
+sys.stderr = Unbuffered(sys.stderr)
 
 
 import os

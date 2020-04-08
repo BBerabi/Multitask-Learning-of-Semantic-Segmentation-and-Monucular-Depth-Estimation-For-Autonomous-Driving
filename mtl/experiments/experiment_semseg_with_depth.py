@@ -163,9 +163,9 @@ class ExperimentSemsegDepth(pl.LightningModule):
         self.metrics_depth.update_batch(y_hat_depth_meters, y_depth_meters)
 
         return {
-            'semseg': loss_val_semseg.cpu().item(),
-            'depth': loss_val_depth.cpu().item(),
-            'total': loss_val_total.cpu().item(),
+            'semseg': loss_val_semseg.cpu(),
+            'depth': loss_val_depth.cpu(),
+            'total': loss_val_total.cpu(),
         }
 
     def validation_end(self, outputs):
@@ -195,7 +195,7 @@ class ExperimentSemsegDepth(pl.LightningModule):
             'loss_val/semseg': loss_val_semseg,
             'loss_val/depth': loss_val_depth,
             'loss_val/total': loss_val_total,
-            'LR': self.trainer.lr_schedulers[0].get_last_lr()[0],
+            'LR': torch.tensor(self.trainer.lr_schedulers[0].get_last_lr()[0]),
         }
         tensorboard_logs.update({f'metrics_task_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
         tensorboard_logs.update({f'metrics_task_depth/{k}': v for k, v in metrics_depth.items()})
