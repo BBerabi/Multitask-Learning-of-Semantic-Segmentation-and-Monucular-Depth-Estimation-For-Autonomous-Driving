@@ -26,7 +26,9 @@ import os
 import traceback
 
 
-exceptions_log_path = os.path.join(os.environ['SM_MODEL_DIR'], 'exceptions.log')
+log_dir = os.path.join(os.environ['SM_MODEL_DIR'], 'log')
+dataset_root = os.environ['SM_CHANNEL_TRAINING']
+exceptions_log_path = os.path.join(log_dir, 'exceptions.log')
 
 
 def custom_excepthook(exc_type, exc_value, exc_traceback):
@@ -45,10 +47,13 @@ from mtl.scripts.train import main
 
 
 if __name__=='__main__':
-    
-    # unpack dataset
-    dataset_root = os.environ.get('SM_CHANNEL_TRAINING', None)
+    assert '--log_dir' not in sys.argv
+    assert '--dataset_root' not in sys.argv
+    sys.argv.append('--log_dir')
+    sys.argv.append(log_dir)
+    sys.argv.append('--dataset_root')
+    sys.argv.append(os.path.join(dataset_root, 'miniscapes'))
+
     datasets.utils.extract_archive(os.path.join(dataset_root, 'miniscapes.zip'), remove_finished=True)
 
-    # run training
     main()

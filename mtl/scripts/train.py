@@ -41,7 +41,7 @@ def main():
         gpus='-1' if torch.cuda.is_available() else None,
         show_progress_bar=cfg.log_to_console,
         max_nb_epochs=cfg.num_epochs,
-        distributed_backend='dp',   # single- or multi-gpu on a single node
+        distributed_backend=None,
         print_nan_grads=False,
         weights_summary=None,
         weights_save_path=None,

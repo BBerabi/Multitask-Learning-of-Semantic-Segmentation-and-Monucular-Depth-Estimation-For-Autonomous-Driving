@@ -26,23 +26,10 @@ def command_line_parser():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    # SageMaker adaptation
-    log_dir = os.environ.get('SM_MODEL_DIR', None)
-    dataset_root = os.environ.get('SM_CHANNEL_TRAINING', None)
-    assert not ((log_dir is None) ^ (dataset_root is None))
-
-    if log_dir is None and dataset_root is None:
-        parser.add_argument(
-            '--log_dir', type=expandpath, required=True, help='Place for artifacts and logs')
-        parser.add_argument(
-            '--dataset_root', type=expandpath, required=True, help='Path to dataset')
-    else:
-        log_dir = os.path.join(log_dir, 'log')
-        dataset_root = os.path.join(dataset_root, 'miniscapes')
-        parser.add_argument(
-            '--log_dir', type=str, default=log_dir, help='Place for artifacts and logs')
-        parser.add_argument(
-            '--dataset_root', type=str, default=dataset_root, help='Path to dataset')
+    parser.add_argument(
+        '--log_dir', type=expandpath, required=True, help='Place for artifacts and logs')
+    parser.add_argument(
+        '--dataset_root', type=expandpath, required=True, help='Path to dataset')
 
     parser.add_argument(
         '--prepare_submission', type=str2bool, default=False,
