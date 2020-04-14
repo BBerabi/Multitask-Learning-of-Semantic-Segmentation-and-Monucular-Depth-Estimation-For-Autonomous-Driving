@@ -154,7 +154,7 @@ def prepare_depth(img, depth_min, depth_max, cmap=None):
     # scale logarithmically to highlight close objects
     img_01 = (1 + img_01 * 1000).log() / np.math.log(1001)
 
-    img_colored_np = cm(img_01, bytes=False)[:,:,:,0:3]
+    img_colored_np = cm(img_01.cpu().numpy(), bytes=False)[:,:,:,0:3]
     img_colored_np = np.rollaxis(img_colored_np, 3, 1)
     img_colored = torch.tensor(img_colored_np).float()
     mask_img_invalid = torch.unsqueeze(mask_img_invalid, dim=1)
