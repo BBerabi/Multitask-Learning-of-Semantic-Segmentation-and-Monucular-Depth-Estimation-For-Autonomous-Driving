@@ -1,0 +1,7 @@
+README.md
+setup.py
+DLAD_ex2_multitask.egg-info/PKG-INFO
+DLAD_ex2_multitask.egg-info/SOURCES.txt
+DLAD_ex2_multitask.egg-info/dependency_links.txt
+DLAD_ex2_multitask.egg-info/requires.txt
+DLAD_ex2_multitask.egg-info/top_level.txt

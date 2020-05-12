@@ -80,7 +80,7 @@ class ExperimentSemsegDepth(pl.LightningModule):
         rgb = batch[MOD_RGB]
         y_semseg_lbl = batch[MOD_SEMSEG].squeeze(1)
         y_depth = batch[MOD_DEPTH].squeeze(1)
-
+        print('shape of y_semseg_1b1 {} and shape of y_depth {}'.format(y_semseg_lbl.shape, y_depth.shape))
         if torch.cuda.is_available():
             rgb = rgb.cuda()
             y_semseg_lbl = y_semseg_lbl.cuda()
@@ -90,7 +90,13 @@ class ExperimentSemsegDepth(pl.LightningModule):
         y_hat_semseg = y_hat[MOD_SEMSEG]
         y_hat_depth = y_hat[MOD_DEPTH]
 
+        print('y_hat: ', y_hat)
+        print('shape of y_hat_semseg: ', y_hat_semseg.shape)
+        print('shape of y_hat_depth: ', y_hat_depth.shape)
+
+
         if type(y_hat_semseg) is list:
+            print('y hat semseg is A LIST')
             # deep supervision scenario: penalize all predicitons in the list and average losses
             loss_semseg = sum([self.loss_semseg(y_hat_semseg_i, y_semseg_lbl) for y_hat_semseg_i in y_hat_semseg])
             loss_depth = sum([self.loss_depth(y_hat_depth_i, y_depth) for y_hat_depth_i in y_hat_depth])
@@ -99,11 +105,12 @@ class ExperimentSemsegDepth(pl.LightningModule):
             y_hat_semseg = y_hat_semseg[-1]
             y_hat_depth = y_hat_depth[-1]
         else:
+            print('y hat semseg is not A LIST')
             loss_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
             loss_depth = self.loss_depth(y_hat_depth, y_depth)
 
         loss_total = self.cfg.loss_weight_semseg * loss_semseg + self.cfg.loss_weight_depth * loss_depth
-
+        self.net.stopp
         tensorboard_logs = {
             'loss_train/semseg': loss_semseg,
             'loss_train/depth': loss_depth,

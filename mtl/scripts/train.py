@@ -13,6 +13,10 @@ from mtl.utils.daemon_tensorboard import DaemonTensorboard
 from mtl.utils.daemon_ngrok import DaemonNgrok
 
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 def main():
     cfg = command_line_parser()
 
@@ -20,6 +24,7 @@ def main():
 
     model = ExperimentSemsegDepth(cfg)
 
+    print("Number of parameters: {}".format(count_parameters(model)))
     logger = TestTubeLogger(
         save_dir=os.path.join(cfg.log_dir),
         name='tube',
