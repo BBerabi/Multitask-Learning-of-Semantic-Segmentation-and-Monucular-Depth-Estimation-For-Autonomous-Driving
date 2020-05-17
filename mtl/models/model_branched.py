@@ -14,7 +14,7 @@ class ModelBranched(torch.nn.Module):
 
         self.encoder = Encoder(
             cfg.model_encoder_name,
-            pretrained=True,
+            pretrained=False,
             zero_init_residual=True,
             replace_stride_with_dilation=(False, False, True),
         )
@@ -37,27 +37,19 @@ class ModelBranched(torch.nn.Module):
         print('scales of feature pyramid with their respective number of channels')
         print(", ".join([f"{k}:{v.shape}" for k, v in features.items()]))
         lowest_scale = max(features.keys())
-        print('lowest scale: {}'.format(lowest_scale))
         features_lowest = features[lowest_scale]
 
         # ASSP Semseg
         features_tasks_semseg = self.aspp_semseg(features_lowest)
-        print("shape of feature_tasks_semseg {} and shape of features[4] {}".format(features_tasks_semseg.shape, features[4].shape))
         # Decoder Semseg
         predictions_4x_semseg, _ = self.decoder_semseg(features_tasks_semseg, features[4])
-        print("shape of predictions_4x_semseg(decoder output) {}".format(predictions_4x_semseg.shape))
         predictions_1x_semseg = F.interpolate(predictions_4x_semseg, size=input_resolution, mode='bilinear', align_corners=False)
-        print("shape of predictions_1x_semseg {}".format(predictions_1x_semseg.shape))
 
         # ASSP Depth
         features_tasks_depth = self.assp_depth(features_lowest)
-        print("shape of feature_tasks_depth {} and shape of features[4] {}".format(features_tasks_semseg.shape, features[4].shape))
-
         # Decoder Depth
         predictions_4x_depth, _2 = self.decoder_depth(features_tasks_depth, features[4])
-        print("shape of predictions_4x_depth(decoder output) {}".format(predictions_4x_semseg.shape))
         predictions_1x_depth = F.interpolate(predictions_4x_depth, size=input_resolution, mode='bilinear', align_corners=False)
-        print("shape of predictions_1x_depth {}".format(predictions_1x_semseg.shape))
 
 
         predictions_1x = torch.cat((predictions_1x_semseg, predictions_1x_depth), 1)

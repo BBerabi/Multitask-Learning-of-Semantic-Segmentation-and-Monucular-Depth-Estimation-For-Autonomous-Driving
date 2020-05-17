@@ -129,18 +129,27 @@ class DecoderDeeplabV3p(torch.nn.Module):
         # # TODO: Implement a proper decoder with skip connections instead of the following
         # self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
         #
+        number_lowlevel = 64
         self.conv1x1_low_level_features = torch.nn.Sequential(
-            torch.nn.Conv2d(skip_4x_ch, skip_4x_ch, kernel_size=1, stride=1, padding=0, dilation=1, bias=False),
-            torch.nn.BatchNorm2d(skip_4x_ch),
+            torch.nn.Conv2d(skip_4x_ch, number_lowlevel, kernel_size=1, stride=1, padding=0, dilation=1, bias=False),
+            torch.nn.BatchNorm2d(number_lowlevel),
             torch.nn.ReLU()
         )
         self.conv3x3_final1 = torch.nn.Sequential(
-            torch.nn.Conv2d(skip_4x_ch+bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1, dilation=1, bias=False),
+            torch.nn.Conv2d(number_lowlevel + bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1,
+                            dilation=1,
+                            bias=False),
             torch.nn.BatchNorm2d(bottleneck_ch),
             torch.nn.ReLU()
         )
-        self.conv3x3_final2 = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=3, stride=1, padding=1, dilation=1, bias=False)
-
+        self.conv3x3_final2 = torch.nn.Sequential(
+            torch.nn.Conv2d(bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1, dilation=1,
+                            bias=False),
+            torch.nn.BatchNorm2d(bottleneck_ch),
+            torch.nn.ReLU()
+        )
+        self.conv3x3_final3 = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=3, stride=1, padding=1, dilation=1,
+                                              bias=False)
 
     def forward(self, features_bottleneck, features_skip_4x):
         """
@@ -149,7 +158,6 @@ class DecoderDeeplabV3p(torch.nn.Module):
         :param features_skip_4x: features of encoder of scale == 4
         :return: features with 256 channels and the final tensor of predictions
         """
-        # print('shape of features bottleneck {}, shape of features_skip_4x {}'.format(features_bottleneck.shape, features_skip_4x.shape))
 
         # TODO: Implement a proper decoder with skip connections instead of the following; keep returned
         #       tensors in the same order and of the same shape.
@@ -160,25 +168,21 @@ class DecoderDeeplabV3p(torch.nn.Module):
         # predictions_4x = self.features_to_predictions(features_4x)
         # return predictions_4x, features_4x
 
-        ### features_bottleneck are the ones from ASSP
-        ### features_skip_4x are the ones from low level encoder
+        # features_bottleneck are the ones from ASSP
+        # features_skip_4x are the ones from low level encoder
 
         # upsmaple the bottleneck by 4 or bring it to the same spatial reso as low level
         features_bottleneck_4x = F.interpolate(
-             features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
+            features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
         )
-        print('shape of bottleneck features after 4x upsampling: {}'.format(features_bottleneck_4x.shape))
         # apply 1x1 conv to low level features
         features_skip_4x = self.conv1x1_low_level_features(features_skip_4x)
-        print('shape of features skip 4x after first 1x1 conv layer {}'.format(features_skip_4x.shape))
         all_features = torch.cat((features_bottleneck_4x, features_skip_4x), 1)
-        print('shape of all features {}'.format(all_features.shape))
-        ### Apply few conv3x3 layers
+        # apply few conv3x3 layers
         all_features = self.conv3x3_final1(all_features)
-        print('shape of all features after forst conv {}'.format(all_features.shape))
-        all_features = self.conv3x3_final2(all_features)
-        print('shape of all features after second conv {}'.format(all_features.shape))
-        return all_features, features_bottleneck_4x
+        distillation_features = self.conv3x3_final2(all_features)
+        output = self.conv3x3_final3(distillation_features)
+        return output, distillation_features
 
 
 class ASPPpart(torch.nn.Sequential):
@@ -193,15 +197,19 @@ class ASPPpart(torch.nn.Sequential):
 class ASPP(torch.nn.Module):
     def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
         super().__init__()
-        print('in channels ASSP: {} out channels ASSP {}'.format(in_channels, out_channels))
         # TODO: Implement ASPP properly instead of the following
         # self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
 
         self.conv1x1 = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
-        self.conv3x3_rate3 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[0], dilation=rates[0])
-        self.conv3x3_rate6 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[1], dilation=rates[1])
-        self.conv3x3_rate9 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[2], dilation=rates[2])
-        self.conv_out = ASPPpart(256*5, 256, kernel_size=1, stride=1, padding=0, dilation=1)
+        self.conv3x3_rate3 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[0],
+                                      dilation=rates[0])
+        self.conv3x3_rate6 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[1],
+                                      dilation=rates[1])
+        self.conv3x3_rate9 = ASPPpart(in_channels, out_channels, kernel_size=3, stride=1, padding=rates[2],
+                                      dilation=rates[2])
+        self.conv_out = ASPPpart(256 * 5, 256, kernel_size=1, stride=1, padding=0, dilation=1)
+
+        self.global_average_pooling = torch.nn.AvgPool2d((37, 49)) # just set to some kernel size, later update
         self.conv1x1_global = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=1, dilation=1)
 
     def forward(self, x):
@@ -209,38 +217,25 @@ class ASPP(torch.nn.Module):
         out2 = self.conv3x3_rate3(x)
         out3 = self.conv3x3_rate6(x)
         out4 = self.conv3x3_rate9(x)
-        # print("Shape of x is {}".format(x.shape))
-        # print("Shape of out1 is {}".format(out1.shape))
-        # print("Shape of out2 is {}".format(out2.shape))
-        # print("Shape of out3 is {}".format(out3.shape))
-        # print("Shape of out4 is {}".format(out4.shape))
 
-        ### Global Pooling + 1x1 CNN with 256 filter and BN + upsmaple bilinearly
-        self.global_average_pooling = torch.nn.AvgPool2d(x.shape[2:])
+        # Global Pooling + 1x1 CNN with 256 filter and BN + upsmaple bilinearly
+        self.global_average_pooling.kernel_size = x.shape[2:] # update the kernel size
         out5 = self.global_average_pooling(x)
-        # print("size of out 5 after global average pooling {}".format(out5.shape))
-        #now apply 1x1CNN with BN and RELU
+
+        # now apply 1x1CNN with BN and RELU
         out5 = self.conv1x1_global(out5)
-        # print("size of out 5 after conv1x1 {}".format(out5.shape))
-        #upsample
+        # upsample
         out5 = F.interpolate(
             out5, size=out1.shape[2:], mode='bilinear', align_corners=False
         )
-        # print("size of out 5 after upsample {}".format(out5.shape))
         all_features = torch.cat((out1, out2, out3, out4, out5), 1)
-        # print("size of all features {}".format(all_features.shape))
         out = self.conv_out(all_features)
-        # print("size of out before returning {}".format(out.shape))
         return out
-
 
         # TODO: Implement ASPP properly instead of the following
         # out = self.conv_out(x)
         # print('shape of out in initial case {}'.format(out.shape))
         # return out
-
-
-
 
 
 class SelfAttention(torch.nn.Module):
@@ -261,6 +256,7 @@ class SqueezeAndExcitation(torch.nn.Module):
     """
     Squeeze and excitation module as explained in https://arxiv.org/pdf/1709.01507.pdf
     """
+
     def __init__(self, channels, r=16):
         super(SqueezeAndExcitation, self).__init__()
         self.transform = torch.nn.Sequential(
@@ -275,3 +271,34 @@ class SqueezeAndExcitation(torch.nn.Module):
         squeezed = torch.mean(x, dim=(2, 3)).reshape(N, C)
         squeezed = self.transform(squeezed).reshape(N, C, 1, 1)
         return x * squeezed
+
+
+class DecoderDistillation(torch.nn.Module):
+    def __init__(self, in_channels, num_out_ch):
+        super(DecoderDistillation, self).__init__()
+
+        self.conv3x3_final1 = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1, dilation=1,
+                            bias=False),
+            torch.nn.BatchNorm2d(in_channels),
+            torch.nn.ReLU()
+        )
+
+        self.conv3x3_final2 = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1, dilation=1,
+                            bias=False),
+            torch.nn.BatchNorm2d(in_channels),
+            torch.nn.ReLU()
+        )
+
+        self.conv3x3_final3 = torch.nn.Conv2d(in_channels, num_out_ch, kernel_size=3, stride=1, padding=1, dilation=1,
+                                              bias=False)
+
+    def forward(self, features_low, features_sa):
+        """
+        """
+        all_features = features_low + features_sa
+        all_features = self.conv3x3_final1(all_features)
+        all_features = self.conv3x3_final2(all_features)
+        all_features = self.conv3x3_final3(all_features)
+        return all_features

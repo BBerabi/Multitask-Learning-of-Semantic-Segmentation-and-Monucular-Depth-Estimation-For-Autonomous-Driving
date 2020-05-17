@@ -29,21 +29,15 @@ class ModelDeepLabV3Plus(torch.nn.Module):
         input_resolution = (x.shape[2], x.shape[3])
 
         features = self.encoder(x)
-
         # Uncomment to see the scales of feature pyramid with their respective number of channels.
-        print('scales of feature pyramid with their respective number of channels')
-        print(", ".join([f"{k}:{v.shape}" for k, v in features.items()]))
-
+        # print('scales of feature pyramid with their respective number of channels')
+        # print(", ".join([f"{k}:{v.shape}" for k, v in features.items()]))
         lowest_scale = max(features.keys())
-        print('lowest scale: {}'.format(lowest_scale))
         features_lowest = features[lowest_scale]
 
         features_tasks = self.aspp(features_lowest)
-        print("shape of feature_tasks {} and shape of features[4] {}".format(features_tasks.shape, features[4].shape))
         predictions_4x, _ = self.decoder(features_tasks, features[4])
-        print("shape of predictions_4x(decoder output) {}".format(predictions_4x.shape))
         predictions_1x = F.interpolate(predictions_4x, size=input_resolution, mode='bilinear', align_corners=False)
-        print("shape of predictions_1x {}".format(predictions_1x.shape))
 
         out = {}
         offset = 0

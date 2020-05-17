@@ -80,7 +80,7 @@ class ExperimentSemsegDepth(pl.LightningModule):
         rgb = batch[MOD_RGB]
         y_semseg_lbl = batch[MOD_SEMSEG].squeeze(1)
         y_depth = batch[MOD_DEPTH].squeeze(1)
-        print('shape of y_semseg_1b1 {} and shape of y_depth {}'.format(y_semseg_lbl.shape, y_depth.shape))
+        # print('shape of y_semseg_1b1 {} and shape of y_depth {}'.format(y_semseg_lbl.shape, y_depth.shape))
         if torch.cuda.is_available():
             rgb = rgb.cuda()
             y_semseg_lbl = y_semseg_lbl.cuda()
@@ -90,9 +90,9 @@ class ExperimentSemsegDepth(pl.LightningModule):
         y_hat_semseg = y_hat[MOD_SEMSEG]
         y_hat_depth = y_hat[MOD_DEPTH]
 
-        print('y_hat: ', y_hat)
-        print('shape of y_hat_semseg: ', y_hat_semseg.shape)
-        print('shape of y_hat_depth: ', y_hat_depth.shape)
+        # print('y_hat: ', y_hat)
+        # print('shape of y_hat_semseg: ', y_hat_semseg.shape)
+        # print('shape of y_hat_depth: ', y_hat_depth.shape)
 
 
         if type(y_hat_semseg) is list:
@@ -104,13 +104,14 @@ class ExperimentSemsegDepth(pl.LightningModule):
             loss_depth = loss_depth / len(y_hat_depth)
             y_hat_semseg = y_hat_semseg[-1]
             y_hat_depth = y_hat_depth[-1]
+            print('computing loss as a list :)))')
         else:
             print('y hat semseg is not A LIST')
             loss_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
             loss_depth = self.loss_depth(y_hat_depth, y_depth)
 
         loss_total = self.cfg.loss_weight_semseg * loss_semseg + self.cfg.loss_weight_depth * loss_depth
-        self.net.stopp
+        # self.net.stopp
         tensorboard_logs = {
             'loss_train/semseg': loss_semseg,
             'loss_train/depth': loss_depth,
