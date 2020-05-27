@@ -195,7 +195,7 @@ class ASPPpart(torch.nn.Sequential):
 
 
 class ASPP(torch.nn.Module):
-    def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
+    def __init__(self, in_channels, out_channels, rates=(6, 12, 18)):
         super().__init__()
         # TODO: Implement ASPP properly instead of the following
         # self.conv_out = ASPPpart(in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1)
@@ -267,6 +267,7 @@ class SqueezeAndExcitation(torch.nn.Module):
         )
 
     def forward(self, x):
+        N, C, H, W = x.shape
         N, C, H, W = x.shape
         squeezed = torch.mean(x, dim=(2, 3)).reshape(N, C)
         squeezed = self.transform(squeezed).reshape(N, C, 1, 1)

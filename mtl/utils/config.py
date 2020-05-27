@@ -45,16 +45,16 @@ def command_line_parser():
     parser.add_argument(
         '--aug_input_crop_size', type=int, default=256, help='Training crop size')
     parser.add_argument(
-        '--aug_geom_scale_min', type=float, default=1.0, help='Augmentation: lower bound of scale')
+        '--aug_geom_scale_min', type=float, default=0.5, help='Augmentation: lower bound of scale')
     parser.add_argument(
-        '--aug_geom_scale_max', type=float, default=1.0, help='Augmentation: upper bound of scale')
+        '--aug_geom_scale_max', type=float, default=1.5, help='Augmentation: upper bound of scale')
     parser.add_argument(
-        '--aug_geom_tilt_max_deg', type=float, default=0.0, help='Augmentation: maximum rotation degree')
+        '--aug_geom_tilt_max_deg', type=float, default=0.35, help='Augmentation: maximum rotation degree')
     parser.add_argument(
-        '--aug_geom_wiggle_max_ratio', type=float, default=0.0,
+        '--aug_geom_wiggle_max_ratio', type=float, default=0.35,
         help='Augmentation: perspective warping level between 0 and 1')
     parser.add_argument(
-        '--aug_geom_reflect', type=str2bool, default=False, help='Augmentation: Random horizontal flips')
+        '--aug_geom_reflect', type=str2bool, default=True, help='Augmentation: Random horizontal flips')
 
     parser.add_argument(
         '--optimizer', type=str, default='sgd', choices=['sgd', 'adam'], help='Type of optimizer')
