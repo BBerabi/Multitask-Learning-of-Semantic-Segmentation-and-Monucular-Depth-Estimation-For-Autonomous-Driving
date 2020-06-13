@@ -18,7 +18,7 @@ class ModelBranched(torch.nn.Module):
             zero_init_residual=True,
             replace_stride_with_dilation=(False, False, True),
         )
-        print('USING BRANCHED MODEL :DDDDDDDDDDDDDDD')
+        print('USING BRANCHED MODEL')
         ch_out_encoder_bottleneck, ch_out_encoder_4x = get_encoder_channel_counts(cfg.model_encoder_name)
 
         self.aspp_semseg = ASPP(ch_out_encoder_bottleneck, 256)
@@ -51,9 +51,7 @@ class ModelBranched(torch.nn.Module):
         predictions_4x_depth, _2 = self.decoder_depth(features_tasks_depth, features[4])
         predictions_1x_depth = F.interpolate(predictions_4x_depth, size=input_resolution, mode='bilinear', align_corners=False)
 
-
         predictions_1x = torch.cat((predictions_1x_semseg, predictions_1x_depth), 1)
-
         out = {}
         offset = 0
         for task, num_ch in self.outputs_desc.items():

@@ -38,12 +38,12 @@ def command_line_parser():
     parser.add_argument(
         '--num_epochs', type=int, default=16, help='Number of training epochs')
     parser.add_argument(
-        '--batch_size', type=int, default=4, help='Number of samples in a batch for training')
+        '--batch_size', type=int, default=20, help='Number of samples in a batch for training')
     parser.add_argument(
         '--batch_size_validation', type=int, default=8, help='Number of samples in a batch for validation')
 
     parser.add_argument(
-        '--aug_input_crop_size', type=int, default=256, help='Training crop size')
+        '--aug_input_crop_size', type=int, default=416, help='Training crop size')
     parser.add_argument(
         '--aug_geom_scale_min', type=float, default=0.5, help='Augmentation: lower bound of scale')
     parser.add_argument(
@@ -74,7 +74,7 @@ def command_line_parser():
         '--dataset', type=str, default='miniscapes', choices=['miniscapes'], help='Dataset name')
 
     parser.add_argument(
-        '--model_name', type=str, default='distillation', choices=['deeplabv3p', 'branched', 'distillation'], help='CNN architecture')
+        '--model_name', type=str, default='modelb', choices=['deeplabv3p', 'branched', 'distillation', 'transdis', 'unet', 'skip', 'modelb'], help='CNN architecture')
     parser.add_argument(
         '--model_encoder_name', type=str, default='resnet34', choices=['resnet34'], help='CNN architecture encoder')
 

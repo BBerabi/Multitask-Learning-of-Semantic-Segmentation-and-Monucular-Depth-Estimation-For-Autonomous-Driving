@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataloader import default_collate
 
+import time
 from mtl.datasets.definitions import *
 from mtl.losses.loss_regression import LossRegression
 from mtl.utils.metrics import MetricsSemseg, MetricsDepth
@@ -30,6 +31,12 @@ class ExperimentSemsegDepth(pl.LightningModule):
         self.semseg_ignore_label = self.datasets[SPLIT_TRAIN].semseg_ignore_label
         self.semseg_class_names = self.datasets[SPLIT_TRAIN].semseg_class_names
         self.semseg_class_colors = self.datasets[SPLIT_TRAIN].semseg_class_colors
+        print('class name: {}'.format(self.semseg_class_names))
+        print('class colors: {}'.format(self.semseg_class_colors))
+        encoded_colors = []
+        for tuple in self.semseg_class_colors:
+            encoded_colors.append(sum(list(tuple)))
+        print('encoded colors: ', encoded_colors)
         self.rgb_mean = self.datasets[SPLIT_TRAIN].rgb_mean
         self.rgb_stddev = self.datasets[SPLIT_TRAIN].rgb_stddev
         self.depth_meters_mean = self.datasets[SPLIT_TRAIN].depth_meters_mean
@@ -70,13 +77,20 @@ class ExperimentSemsegDepth(pl.LightningModule):
         self.datasets[SPLIT_VALID].set_transforms(self.transforms_val_test)
         self.datasets[SPLIT_TEST].set_transforms(self.transforms_val_test)
 
-        self.loss_semseg = torch.nn.CrossEntropyLoss(ignore_index=self.semseg_ignore_label)
+        self.class_weights = {'road': 0.07, 'sidewalk': 0.3, 'building': 0.01, 'wall': 0.6, 'fence': 0.6,
+                              'pole': 1.0, 'traffic light': 5.3, 'traffic sign': 3.8, 'vegetation': 0.15,
+                              'terrain': 1.12, 'sky': 0.25, 'person': 0.65, 'rider': 2.1, 'car': 0.36,
+                              'truck': 2.26, 'bus': 1.5, 'train': 1.15, 'motorcycle': 2.92, 'bicycle': 3.5}
+
+        self.class_weights = torch.Tensor(list(self.class_weights.values()))
+        self.loss_semseg = torch.nn.CrossEntropyLoss(weight=self.class_weights, ignore_index=self.semseg_ignore_label)
         self.loss_depth = LossRegression()
 
         self.metrics_semseg = MetricsSemseg(self.semseg_num_classes, self.semseg_ignore_label, self.semseg_class_names)
         self.metrics_depth = MetricsDepth()
 
     def training_step(self, batch, batch_nb):
+        global_start = time.time()
         rgb = batch[MOD_RGB]
         y_semseg_lbl = batch[MOD_SEMSEG].squeeze(1)
         y_depth = batch[MOD_DEPTH].squeeze(1)
@@ -94,12 +108,14 @@ class ExperimentSemsegDepth(pl.LightningModule):
         # print('shape of y_hat_semseg: ', y_hat_semseg.shape)
         # print('shape of y_hat_depth: ', y_hat_depth.shape)
 
+        weights = [0.7, 1]
 
+        start = time.time()
         if type(y_hat_semseg) is list:
             print('y hat semseg is A LIST')
             # deep supervision scenario: penalize all predicitons in the list and average losses
-            loss_semseg = sum([self.loss_semseg(y_hat_semseg_i, y_semseg_lbl) for y_hat_semseg_i in y_hat_semseg])
-            loss_depth = sum([self.loss_depth(y_hat_depth_i, y_depth) for y_hat_depth_i in y_hat_depth])
+            loss_semseg = sum([weights[i]*self.loss_semseg(y_hat_semseg_i, y_semseg_lbl) for i, y_hat_semseg_i in enumerate(y_hat_semseg)])
+            loss_depth = sum([weights[i]*self.loss_depth(y_hat_depth_i, y_depth) for i, y_hat_depth_i in enumerate(y_hat_depth)])
             loss_semseg = loss_semseg / len(y_hat_semseg)
             loss_depth = loss_depth / len(y_hat_depth)
             y_hat_semseg = y_hat_semseg[-1]
@@ -109,6 +125,8 @@ class ExperimentSemsegDepth(pl.LightningModule):
             print('y hat semseg is not A LIST')
             loss_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
             loss_depth = self.loss_depth(y_hat_depth, y_depth)
+        end = time.time()
+        print('time of loss computation: ', end - start)
 
         loss_total = self.cfg.loss_weight_semseg * loss_semseg + self.cfg.loss_weight_depth * loss_depth
         # self.net.stopp
@@ -120,7 +138,8 @@ class ExperimentSemsegDepth(pl.LightningModule):
 
         if self.can_visualize():
             self.visualize(batch, y_hat_semseg, y_hat_depth, batch[MOD_ID], 'train/batch_crops')
-
+        global_end = time.time()
+        print('total time of one step: ', global_end-global_start)
         return {
             'progress_bar': {
                 'semseg': loss_semseg,

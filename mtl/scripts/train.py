@@ -19,7 +19,7 @@ def count_parameters(model):
 
 def main():
     cfg = command_line_parser()
-
+    torch.backends.cudnn.benchmark = True
     check_all_rules(cfg)
 
     model = ExperimentSemsegDepth(cfg)
@@ -51,6 +51,7 @@ def main():
         weights_summary=None,
         weights_save_path=None,
         nb_sanity_val_steps=1,
+        amp_level='O2'
     )
 
     daemon_tb = None

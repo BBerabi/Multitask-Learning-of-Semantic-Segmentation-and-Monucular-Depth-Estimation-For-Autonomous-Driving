@@ -5,6 +5,10 @@ from mtl.datasets.dataset_miniscapes import DatasetMiniscapes
 from mtl.models.model_deeplab_v3_plus import ModelDeepLabV3Plus
 from mtl.models.model_branched import ModelBranched
 from mtl.models.model_distillation import ModelDistillation
+from mtl.models.model_transdis import ModelTransdis
+from mtl.models.model_unet import ModelUnet
+from mtl.models.model_skip import ModelSkip
+from mtl.models.model_b import ModelB
 
 def resolve_dataset_class(name):
     return {
@@ -16,7 +20,11 @@ def resolve_model_class(name):
     return {
         'deeplabv3p': ModelDeepLabV3Plus,
         'branched': ModelBranched,
-        'distillation': ModelDistillation
+        'distillation': ModelDistillation,
+        'transdis': ModelTransdis,
+        'unet': ModelUnet,
+        'skip': ModelSkip,
+        'modelb': ModelB,
     }[name]
 
 
